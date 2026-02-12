@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FLAC: Maximum Entropy RL via Kinetic Energy Regularized Bridge Matching</title>
+
+    <!-- MathJax for LaTeX rendering -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true
+            }
+        };
+    </script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.65;
+            color: #1a1a1a;
+            background: #fafafa;
+        }
+
+        /* Navigation */
+        nav {
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #e5e5e5;
+            z-index: 1000;
+            padding: 18px 0;
+        }
+
+        nav .nav-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            gap: 45px;
+            flex-wrap: wrap;
+            padding: 0 40px;
+        }
+
+        nav a {
+            color: #666;
+            text-decoration: none;
+            font-size: 0.95em;
+            font-weight: 500;
+            transition: color 0.2s;
+            letter-spacing: 0.3px;
+        }
+
+        nav a:hover {
+            color: #0066cc;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        header {
+            text-align: center;
+            padding: 100px 40px 80px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        h1 {
+            font-size: 2.6em;
+            margin-bottom: 40px;
+            color: #000;
+            font-weight: 600;
+            line-height: 1.25;
+            letter-spacing: -0.03em;
+        }
+
+        .authors {
+            font-size: 1.1em;
+            color: #444;
+            margin-bottom: 14px;
+            line-height: 1.6;
+        }
+
+        .affiliations {
+            font-size: 0.95em;
+            color: #666;
+            margin-bottom: 12px;
+            line-height: 1.8;
+        }
+
+        .author-notes {
+            font-size: 0.88em;
+            color: #888;
+            margin-bottom: 40px;
+            font-style: italic;
+        }
+
+        .authors sup, .affiliations sup {
+            font-size: 0.75em;
+            margin: 0 1px;
+        }
+
+        .links {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 35px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 28px;
+            background: #0066cc;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-weight: 500;
+            font-size: 0.95em;
+        }
+
+        .btn:hover {
+            background: #0052a3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+        }
+
+        .btn-outline {
+            background: white;
+            color: #0066cc;
+            border: 1.5px solid #0066cc;
+        }
+
+        .btn-outline:hover {
+            background: #0066cc;
+            color: white;
+        }
+
+        section {
+            padding: 80px 0;
+            background: white;
+            margin-bottom: 2px;
+        }
+
+        section:nth-child(even) {
+            background: #fafafa;
+        }
+
+        h2 {
+            font-size: 2em;
+            margin-bottom: 35px;
+            color: #000;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        h3 {
+            font-size: 1.4em;
+            margin: 45px 0 20px;
+            color: #0066cc;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        h3:first-of-type {
+            margin-top: 0;
+        }
+
+        h4 {
+            font-size: 1.15em;
+            margin: 25px 0 15px;
+            color: #1a1a1a;
+            font-weight: 600;
+        }
+
+        .abstract {
+            font-size: 1.08em;
+            line-height: 1.75;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .abstract p {
+            margin-bottom: 18px;
+        }
+
+        p {
+            margin-bottom: 18px;
+            line-height: 1.75;
+            color: #333;
+        }
+
+        .method-section {
+            margin: 35px 0;
+        }
+
+        .method-box {
+            background: #f8fafc;
+            padding: 24px 28px;
+            border-left: 4px solid #0066cc;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .method-box h4 {
+            font-size: 1.05em;
+            margin-bottom: 10px;
+            margin-top: 0;
+            color: #0066cc;
+            font-weight: 600;
+        }
+
+        .method-box p {
+            font-size: 1em;
+            line-height: 1.7;
+            color: #444;
+            margin-bottom: 8px;
+        }
+
+        .method-box p:last-child {
+            margin-bottom: 0;
+        }
+
+        .insight-box {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            padding: 24px 28px;
+            border-left: 4px solid #2563eb;
+            margin: 30px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .insight-box h4 {
+            color: #1d4ed8;
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-weight: 600;
+            font-size: 1.05em;
+        }
+
+        .insight-box p {
+            color: #1e3a5f;
+            line-height: 1.7;
+            margin-bottom: 0;
+        }
+
+        .note-box {
+            background: #fffbeb;
+            padding: 16px 24px;
+            border-left: 4px solid #f59e0b;
+            margin: 20px 0;
+            border-radius: 0 6px 6px 0;
+            font-size: 0.92em;
+            line-height: 1.65;
+        }
+
+        .note-box strong {
+            color: #d97706;
+            font-weight: 600;
+        }
+
+        .equation-display {
+            background: #f8fafc;
+            padding: 28px 30px;
+            margin: 25px 0;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 1.05em;
+            border: 1px solid #e2e8f0;
+        }
+
+        .equation-note {
+            margin-top: 15px;
+            font-size: 0.92em;
+            color: #666;
+            font-style: italic;
+        }
+
+        .figure {
+            margin: 60px 0;
+        }
+
+        .figure img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        .figure-caption {
+            margin-top: 18px;
+            font-size: 0.95em;
+            color: #555;
+            line-height: 1.65;
+        }
+
+        .contribution-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .contribution-list li {
+            padding: 10px 0;
+            padding-left: 28px;
+            position: relative;
+            font-size: 1em;
+            line-height: 1.65;
+            color: #333;
+        }
+
+        .contribution-list li:before {
+            content: "•";
+            position: absolute;
+            left: 8px;
+            color: #0066cc;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .bibtex-container {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 8px;
+            margin: 35px 0;
+        }
+
+        .bibtex-box {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 24px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: background 0.2s;
+            font-weight: 500;
+        }
+
+        .copy-btn:hover {
+            background: #0052a3;
+        }
+
+        .copy-btn.copied {
+            background: #28a745;
+        }
+
+        footer {
+            text-align: center;
+            padding: 60px 40px;
+            color: #666;
+            font-size: 0.92em;
+            background: white;
+            border-top: 1px solid #e5e5e5;
+        }
+
+        footer p {
+            margin: 8px 0;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            h2 {
+                font-size: 1.6em;
+            }
+
+            .container {
+                padding: 0 24px;
+            }
+
+            section {
+                padding: 50px 0;
+            }
+
+            header {
+                padding: 60px 24px 50px;
+            }
+
+            nav .nav-container {
+                gap: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="#abstract">Abstract</a>
+            <a href="#method">Method</a>
+            <a href="#results">Results</a>
+            <a href="#limitations">Limitations</a>
+            <a href="#acknowledgments">Acknowledgments</a>
+            <a href="#citation">Citation</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>FLAC: Maximum Entropy RL via Kinetic Energy Regularized Bridge Matching</h1>
+            <div class="authors">
+                Lei Lv<sup>1,2,3*</sup>,
+                Yunfei Li<sup>2</sup>,
+                Yu Luo<sup>3</sup>,
+                Fuchun Sun<sup>3†</sup>,
+                Xiao Ma<sup>2†</sup>
+            </div>
+            <div class="affiliations">
+                <sup>1</sup>Shanghai Research Institute for Intelligent Autonomous Systems &nbsp;&nbsp;
+                <sup>2</sup>ByteDance Seed &nbsp;&nbsp;
+                <sup>3</sup>Tsinghua University
+            </div>
+            <div class="author-notes">
+                <sup>*</sup>Work done during internship at ByteDance Seed &nbsp;&nbsp;
+                <sup>†</sup>Corresponding authors
+            </div>
+            <div class="links">
+                <a href="#" class="btn">Paper</a>
+                <a href="#citation" class="btn btn-outline">Citation</a>
+                <a href="#" class="btn btn-outline">Code (Coming Soon)</a>
+            </div>
+        </header>
+    </div>
+
+    <section id="abstract">
+        <div class="container">
+            <h2>Abstract</h2>
+            <div class="abstract">
+                <p>Iterative generative policies, such as diffusion models and flow matching, offer superior expressivity for continuous control but complicate Maximum Entropy Reinforcement Learning because their action log-densities are not directly accessible. To address this, we propose <strong>Field Least-Energy Actor-Critic (FLAC)</strong>, a likelihood-free framework that regulates policy stochasticity by penalizing the kinetic energy of the velocity field.</p>
+
+                <p>Our key insight is to formulate policy optimization as a <strong>Generalized Schrödinger Bridge (GSB)</strong> problem relative to a high-entropy reference process (e.g., uniform). Under this view, the maximum-entropy principle emerges naturally as staying close to a high-entropy reference while optimizing return, without requiring explicit action densities. In this framework, kinetic energy serves as a physically grounded proxy for divergence from the reference: minimizing path-space energy bounds the deviation of the induced terminal action distribution.</p>
+
+                <p>Building on this view, we derive an energy-regularized policy iteration scheme and a practical off-policy algorithm that automatically tunes the kinetic energy via a Lagrangian dual mechanism. Empirically, FLAC achieves superior or comparable performance on high-dimensional benchmarks relative to strong baselines, while avoiding explicit density estimation.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="method">
+        <div class="container">
+            <h2>Method</h2>
+
+            <h3>1. What is Generalized Schrödinger Bridge?</h3>
+
+            <p>The <strong>Schrödinger Bridge Problem (SBP)</strong> finds the most likely stochastic process connecting two distributions. Given initial distribution $\mu_0$ and terminal distribution $\mu_1$, it solves:</p>
+
+            <div class="equation-display">
+                $$\min_{\mathbb{P}} \quad \mathcal{D}(\mathbb{P} \| \mathbb{P}^{\mathrm{ref}}) \quad \text{s.t.} \quad \mathbb{P}_{t=0} = \mu_0, \quad \mathbb{P}_{t=1} = \mu_1$$
+                <div class="equation-note">
+                    Find the path measure closest to reference while matching both boundary distributions.
+                </div>
+            </div>
+
+            <p>The <strong>Generalized Schrödinger Bridge (GSB)</strong> relaxes the hard terminal constraint to a soft potential. This is crucial: we no longer need samples from the target distribution $\mu_1$, only a potential function $\mathcal{G}$ that scores terminal states.</p>
+
+            <div class="equation-display">
+                $$\min_{\mathbb{P}} \quad \mathcal{J}_{\mathrm{GSB}}(\mathbb{P}) = \underbrace{\mathcal{D}(\mathbb{P} \| \mathbb{P}^{\mathrm{ref}})}_{\text{Stay close to reference}} + \underbrace{\mathbb{E}_{X_1 \sim \mathbb{P}} \left[ \mathcal{G}(X_1) \right]}_{\text{Terminal potential}} \quad \text{s.t.} \quad \mathbb{P}_{t=0} = \mu_0$$
+                <div class="equation-note">
+                    Only the initial distribution is constrained; the terminal distribution is guided by potential $\mathcal{G}$.
+                </div>
+            </div>
+
+            <div class="note-box">
+                <strong>Note:</strong> The divergence $\mathcal{D}$ depends on the process type. For SDE, it is KL divergence; for ODE, other measures apply. Our framework handles both.
+            </div>
+
+            <p>The optimal solution has a closed form—the terminal distribution is an exponential tilting of the reference:</p>
+
+            <div class="equation-display">
+                $$p^*(X_1) \propto \mu_1^{\mathrm{ref}}(X_1) \cdot \exp\left(-\mathcal{G}(X_1)\right)$$
+                <div class="equation-note">
+                    where $\mu_1^{\mathrm{ref}}$ is the terminal distribution of the reference process.
+                </div>
+            </div>
+
+            <h3>2. Why Model Maximum Entropy RL as GSB?</h3>
+
+            <p>Let's start with what we want. Maximum Entropy RL seeks policies that maximize return while maintaining high entropy:</p>
+
+            <div class="equation-display">
+                $$\max_\pi \quad \mathbb{E}_\pi[R] + \alpha \mathcal{H}(\pi(\cdot|s))$$
+                <div class="equation-note">
+                    The optimal solution is the Boltzmann policy: $\pi^*(a|s) \propto \exp(Q(s,a)/\alpha)$
+                </div>
+            </div>
+
+            <p>This is elegant in theory. But here's the problem: for iterative generative policies like diffusion models, we can't compute $\log \pi(a|s)$—actions emerge from a multi-step stochastic process. The entropy term becomes intractable.</p>
+
+            <p>Now, recall the GSB optimal solution from Section 1:</p>
+
+            <div class="equation-display">
+                $$p^*(X_1) \propto \mu_1^{\mathrm{ref}}(X_1) \cdot \exp\left(-\mathcal{G}(X_1)\right)$$
+            </div>
+
+            <p>Notice something? These have the same form! If we choose:</p>
+
+            <ul class="contribution-list">
+                <li>$\mu_1^{\mathrm{ref}} = \text{uniform}$ (high-entropy reference)</li>
+                <li>$\mathcal{G}(a) = -Q(s,a)/\alpha$ (potential favors high Q-values)</li>
+            </ul>
+
+            <p>Then GSB directly gives us the Boltzmann policy—without ever computing $\log \pi(a|s)$.</p>
+
+            <div class="insight-box">
+                <h4>Why GSB Fits RL Perfectly</h4>
+                <p>Here's the key insight: in RL, we don't have samples from the optimal policy $\pi^*$—we only have a scoring function (Q-value). This matches GSB exactly: no target samples needed, just a potential $\mathcal{G}$. The path divergence term implicitly regularizes entropy through the generation process itself.</p>
+            </div>
+
+            <p>This gives us three benefits:</p>
+
+            <ul class="contribution-list">
+                <li><strong>Likelihood-free:</strong> No need to compute intractable $\log \pi(a|s)$ for generative policies.</li>
+                <li><strong>Natural entropy:</strong> Staying close to high-entropy reference preserves stochasticity.</li>
+                <li><strong>Principled:</strong> GSB theory guarantees the terminal distribution matches Boltzmann form.</li>
+            </ul>
+
+            <h3>3. From Path Constraint to Kinetic Energy</h3>
+
+            <p>So far so good. But the GSB objective involves a path constraint—staying close to the reference process. This is defined on the space of entire trajectories, which sounds abstract and hard to optimize. Can we turn it into something concrete?</p>
+
+            <p>Consider a controlled process with drift $u_\theta$ and a reference process with zero drift (pure noise):</p>
+
+            <div class="equation-display">
+                $$\text{Policy: } dX_\tau = u_\theta(s, \tau, X_\tau) d\tau + \sigma dW_\tau \qquad \text{Reference: } dX_\tau = \sigma dW_\tau$$
+            </div>
+
+            <p>The two processes share the same noise but differ in drift. How far apart are they? This depends on whether we work with SDEs or ODEs:</p>
+
+            <div class="method-box">
+                <h4>SDE Case ($\sigma > 0$): Girsanov's Theorem</h4>
+                <p>For stochastic processes, Girsanov's theorem gives an exact identity: the KL divergence on path space equals the expected kinetic energy of the drift:</p>
+                <p>$$\mathcal{D}_{\mathrm{KL}}(\mathbb{P}^\theta \| \mathbb{P}^{\mathrm{ref}}) = \frac{1}{2\sigma^2} \mathbb{E}_{\mathbb{P}^\theta} \left[ \int_0^1 \|u_\theta(s, \tau, X_\tau)\|^2 d\tau \right]$$</p>
+                <p>This is not an approximation—it is an equality. Minimizing kinetic energy is exactly equivalent to minimizing path-space KL divergence.</p>
+            </div>
+
+            <div class="method-box">
+                <h4>ODE Case ($\sigma \to 0$): Wasserstein Bound</h4>
+                <p>For deterministic flows, the KL interpretation no longer applies. Instead, kinetic energy upper-bounds the squared $W_2$ distance between the induced terminal distribution and the reference:</p>
+                <p>$$W_2^2(p_1^\theta, \mu_1^{\mathrm{ref}}) \leq \mathbb{E}\left[\int_0^1 \|u_\theta\|^2 d\tau\right]$$</p>
+                <p>This acts as a geometric proximity constraint: penalizing kinetic energy prevents aggressive, large-scale transport that would concentrate probability mass. While this does not directly bound entropy, it empirically discourages rapid mode collapse and promotes broad action coverage.</p>
+            </div>
+
+            <p>In both cases, kinetic energy provides a tractable, computable measure of how far the policy strays from the high-entropy reference:</p>
+
+            <div class="equation-display">
+                $$\mathcal{E}_{\mathrm{kinetic}} = \mathbb{E}_{\mathbb{P}^\theta} \left[ \int_0^1 \|u_\theta(s, \tau, X_\tau)\|^2 d\tau \right]$$
+                <div class="equation-note">
+                    SDE: equals path-space KL divergence. ODE: upper-bounds $W_2$ distance to reference.
+                </div>
+            </div>
+
+            <div class="insight-box">
+                <h4>An Intuitive View</h4>
+                <p>Think of it this way: kinetic energy $\|u_\theta\|^2$ measures the "effort" to transport noise to actions, while the terminal potential $-Q(s,a)$ acts like a potential energy landscape guiding where actions should land. The policy seeks paths that minimize total action—balancing efficient transport (low kinetic energy) against reaching high-reward regions (low potential energy). This echoes the principle of least action in physics: among all possible paths, nature chooses the one that minimizes the integrated difference between kinetic and potential energy.</p>
+            </div>
+
+            <div class="figure">
+                <img src="figure/final_figure_v9.png" alt="Kinetic Energy Regularization">
+                <div class="figure-caption">
+                    <strong>Kinetic Energy Regularization Encourages Exploration.</strong>
+                    (Top) Without regularization: high velocity collapses to a single mode. (Bottom) FLAC: penalizing kinetic energy preserves the multimodal distribution.
+                </div>
+            </div>
+
+            <h3>4. The FLAC Objective</h3>
+
+            <p>Now we have all the pieces. Combining GSB formulation + RL potential + kinetic energy regularization, we arrive at the FLAC objective:</p>
+
+            <div class="equation-display">
+                $$\min_{\theta} J_{\text{FLAC}}(\theta) = \mathbb{E}_{\mathbb{P}^\theta} \left[ \underbrace{\alpha \int_0^1 \frac{1}{2} \left\| u_\theta(s, \tau, X_\tau) \right\|^2 d\tau}_{\text{Kinetic energy (entropy proxy)}} - \underbrace{Q(s, X_1)}_{\text{Return}} \right]$$
+                <div class="equation-note">
+                    Minimize kinetic energy + Maximize return. Fully tractable—no density evaluation needed.
+                </div>
+            </div>
+
+            <p>That's it. We can sample trajectories, compute kinetic energy along the path, and optimize with standard gradient descent. No likelihood computation required.</p>
+
+            <div class="method-section">
+                <div class="method-box">
+                    <h4>Energy-Regularized Policy Iteration</h4>
+                    <p>We derive energy-regularized Bellman operators with $\gamma$-contraction guarantees, extending classical policy iteration to generative policies.</p>
+                </div>
+
+                <div class="method-box">
+                    <h4>Automatic Energy Tuning</h4>
+                    <p>A Lagrangian dual mechanism learns $\alpha$ to maintain target energy level $E_{\mathrm{tgt}}$, adapting exploration automatically.</p>
+                </div>
+
+                <div class="method-box">
+                    <h4>Pathwise Gradient Estimation</h4>
+                    <p>Differentiable ODE solvers enable end-to-end gradient flow, compatible with standard off-policy replay buffers.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="results">
+        <div class="container">
+            <h2>Experimental Results</h2>
+
+            <div class="figure">
+                <img src="figure/vistask.png" alt="Task Visualization">
+                <div class="figure-caption">
+                    <strong>Benchmark Tasks.</strong>
+                    Visualization of the benchmark tasks used in our experiments, including DMControl and HumanoidBench environments.
+                </div>
+            </div>
+
+            <div class="figure">
+                <img src="figure/dmc_compare_grid.png" alt="DMControl Results">
+                <div class="figure-caption">
+                    <strong>DMControl Benchmark Results.</strong>
+                    Performance comparisons on DMControl tasks. FLAC achieves competitive or superior performance compared to state-of-the-art baselines. All algorithms are evaluated with 5 random seeds.
+                </div>
+            </div>
+
+            <div class="figure">
+                <img src="figure/h1_compare.png" alt="Humanoid Results">
+                <div class="figure-caption">
+                    <strong>Humanoid Benchmark Results.</strong>
+                    Performance comparisons on challenging humanoid locomotion tasks. FLAC demonstrates strong performance across different humanoid control scenarios.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="limitations">
+        <div class="container">
+            <h2>Limitations & Future Directions</h2>
+
+            <p>Currently, FLAC applies a uniform kinetic energy penalty across all action dimensions. However, in practice different dimensions often require different levels of exploration—for instance, a humanoid's hip joint may need precise control while the arm joints benefit from more exploratory behavior. Learning dimension-specific energy budgets, rather than a single scalar $\alpha$, is a promising direction for improving performance.</p>
+        </div>
+    </section>
+
+    <section id="acknowledgments">
+        <div class="container">
+            <h2>Acknowledgments</h2>
+            <p>We are deeply grateful to Xiao Ma, Yunfei Li, and Yu Luo for their continuous support and guidance throughout this project. This work would not have been possible without their invaluable contributions.</p>
+        </div>
+    </section>
+
+    <section id="citation">
+        <div class="container">
+            <h2>Citation</h2>
+            <p style="margin-bottom: 20px;">If you find this work useful, please consider citing:</p>
+            <div class="bibtex-container">
+                <div class="bibtex-box">
+                    <button class="copy-btn" onclick="copyBibtex()">Copy</button>
+                    <pre id="bibtex-text">@article{lv2024flac,
+  title={FLAC: Maximum Entropy RL via Kinetic Energy Regularized Bridge Matching},
+  author={Lv, Lei and Li, Yunfei and Luo, Yu and Sun, Fuchun and Ma, Xiao},
+  journal={arXiv preprint},
+  year={2024}
+}</pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p><strong>FLAC: Maximum Entropy RL via Kinetic Energy Regularized Bridge Matching</strong></p>
+        <p style="margin-top: 12px;">
+            Lei Lv, Yunfei Li, Yu Luo, Fuchun Sun, Xiao Ma
+        </p>
+    </footer>
+
+    <script>
+        function copyBibtex() {
+            const bibtexText = document.getElementById('bibtex-text').textContent;
+            navigator.clipboard.writeText(bibtexText).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
